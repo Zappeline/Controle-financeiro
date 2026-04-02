@@ -26,6 +26,54 @@ const statusDto = z.object({
   status: z.enum(["pendente", "pago", "recebido"]),
 });
 
+// HOF 1 - filter: filtra transações por tipo
+const filterByType = (transactions, type) =>
+  transactions.filter((t) => t.type === type);
+
+// HOF 2 - reduce: soma os valores das transações
+const sumAmounts = (transactions) =>
+  transactions.reduce((acc, t) => acc + t.amount, 0);
+
+// Função recursiva: calcula o saldo acumulado mês a mês
+const calcularSaldoAcumulado = (months, index, saldoAnterior) => {
+  if (index >= months.length) return [];
+  const saldoAtual = saldoAnterior + months[index].saldo;
+  return [
+    { month: months[index].month, saldoAcumulado: saldoAtual },
+    ...calcularSaldoAcumulado(months, index + 1, saldoAtual),
+  ];
+};
+
+// 0. Resumo financeiro do usuário
+app.get("/:user/summary", async (req, res) => {
+  const transactions = await prisma.transaction.findMany({
+    where: { user: req.params.user },
+  });
+
+  const entradas = filterByType(transactions, "entrada");
+  const saidas = filterByType(transactions, "saida");
+
+  const totalEntradas = sumAmounts(entradas);
+  const totalSaidas = sumAmounts(saidas);
+
+  const meses = [...new Set(transactions.map((t) => t.month))];
+
+  const porMes = meses.map((month) => {
+    const doMes = transactions.filter((t) => t.month === month);
+    const saldo = sumAmounts(filterByType(doMes, "entrada")) - sumAmounts(filterByType(doMes, "saida"));
+    return { month, saldo };
+  });
+
+  const saldoAcumulado = calcularSaldoAcumulado(porMes, 0, 0);
+
+  res.json({
+    totalEntradas,
+    totalSaidas,
+    saldo: totalEntradas - totalSaidas,
+    saldoAcumulado,
+  });
+});
+
 // 1. Listar transações de um usuário
 app.get("/:user/transactions", async (req, res) => {
   const transactions = await prisma.transaction.findMany({
