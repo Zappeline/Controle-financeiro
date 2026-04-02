@@ -1,0 +1,21 @@
+info:
+  name: Atualizar status
+  type: http
+  seq: 5
+
+http:
+  method: PATCH
+  url: http://localhost:8080/lucas/transactions/1/up
+  body:
+    type: json
+    data: |
+      {
+        "status": "pago"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
