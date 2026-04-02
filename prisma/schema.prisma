@@ -9,31 +9,19 @@ generator client {
 }
 
 datasource db {
-  provider = "postgres"
+  provider = "postgresql"
 }
 
-model User { 
-  id      Int     @id @default(autoincrement()) 
-  email   String  @unique
-  name    String
-  surname String
-  age     Int
-  address String
-  notes   Note[]
-}
-
-model Note {
-  id          Int      @id @default(autoincrement())
-  title       String
-  description String
-  author      User     @relation(fields: [authorId], references: [id])
-  authorId    Int
-  createdAt   DateTime @default(now())
+model User {
+  id           Int           @id @default(autoincrement())
+  name         String
+  transactions Transaction[]
 }
 
 model Transaction {
   id          Int      @id @default(autoincrement())
-  user        String
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id])
   description String
   amount      Float
   type        String
